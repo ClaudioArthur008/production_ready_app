@@ -48,7 +48,7 @@ flutter analyze --fatal-infos
 flutter test
 ```
 
-Run integration tests with an Android emulator/device:
+Integration tests can run on Windows desktop or an Android emulator:
 
 ```sh
 flutter test integration_test
@@ -60,7 +60,7 @@ flutter test integration_test
 flutter build apk --release
 ```
 
-The APK is created at `build/app/outputs/flutter-apk/app-release.apk`. GitHub Actions checks analysis, unit/widget tests, Android integration tests, and a release build, then uploads the APK as a workflow artifact.
+The APK is created at `build/app/outputs/flutter-apk/app-release.apk`. GitHub Actions checks analysis, unit/widget tests, Windows desktop integration tests, and a release APK build, then uploads the APK as a workflow artifact.
 
 ## Accessibility and performance
 

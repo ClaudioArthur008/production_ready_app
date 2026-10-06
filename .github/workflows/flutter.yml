@@ -22,13 +22,6 @@ jobs:
         run: flutter analyze --fatal-infos
       - name: Unit and widget tests
         run: flutter test
-      - name: Integration tests on Android
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          disable-animations: true
-          script: flutter test integration_test
       - name: Android release build
         run: flutter build apk --release
       - name: Upload demo APK
@@ -37,3 +30,18 @@ jobs:
           name: mora-android-demo
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+
+  integration:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Integration tests
+        run: flutter test integration_test --device-id windows --reporter expanded
