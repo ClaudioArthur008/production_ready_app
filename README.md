@@ -22,15 +22,19 @@ Mora uses Material icons and drawn charts instead of remote images, so it makes 
 
 ```
 lib/
-  app/       AppState, locale copy, theme, screens and shared widgets
+  app/       Presentation, navigation, AppState, locale copy and theme
   data/      BudgetRepository contract, in-memory adapter and demo ledger
   domain/    MoneyEntry, categories, limits and pure calculations
-  main.dart  Flutter entry point
-test/        Unit, repository, state and widget tests
-integration_test/  End-to-end user flows
+  main.dart  Flutter entry point and dependency-provider setup
+test/
+  domain/    Unit tests for budget calculations
+  data/      Unit tests for repository behavior
+  app_state_test.dart  Unit tests for application state
+  widget_test.dart    Widget tests for screen and interaction behavior
+integration_test/     End-to-end user flows
 ```
 
-The UI depends on a `BudgetRepository` through `AppState`, and financial calculations live in pure `BudgetMath` functions. The repository contract lets a durable local store replace the demo adapter. `provider` exposes app state, while `Selector` scopes ledger, budget, insight, and settings updates to the data each screen reads. Ledger snapshots are cached and invalidated only after an entry changes.
+Mora uses a layered architecture: `app` contains presentation and application state, `domain` owns budget rules and models, and `data` implements the repository contract. The UI reads the repository through `AppState`; financial calculations live in pure `BudgetMath` functions. `provider` exposes app state, while `Selector` scopes ledger, budget, insight, and settings updates to the data each screen reads. Ledger snapshots are cached and invalidated only after an entry changes.
 
 ## Requirements and setup
 
@@ -49,6 +53,14 @@ flutter test
 ```
 
 The checked-in suite contains **28 unit tests**, **6 widget tests**, and **2 integration tests**. `flutter test` runs the first 34 tests; CI runs the two integration flows in its Windows job.
+
+| Test group | Files | Count |
+| --- | --- | ---: |
+| Unit: budget calculations | `test/domain/budget_test.dart` | 12 |
+| Unit: repository | `test/data/budget_repository_test.dart` | 7 |
+| Unit: application state | `test/app_state_test.dart` | 9 |
+| Widget | `test/widget_test.dart` | 6 |
+| Integration | `integration_test/app_test.dart` | 2 |
 
 Integration tests can run on Windows desktop (with the Visual Studio C++ desktop toolchain installed) or an Android emulator:
 
