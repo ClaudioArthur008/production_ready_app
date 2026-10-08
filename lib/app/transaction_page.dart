@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../domain/budget.dart';
 import 'app_state.dart';
 import 'shared_widgets.dart';
 import 'strings.dart';
 
+/// Shows a searchable, filterable, lazily built transaction ledger.
 class TransactionsPage extends StatefulWidget {
-  const TransactionsPage({super.key, required this.state});
-  final AppState state;
+  /// Creates the transaction history screen.
+  const TransactionsPage({super.key});
   @override
   State<TransactionsPage> createState() => _TransactionsPageState();
 }
@@ -16,9 +18,37 @@ class _TransactionsPageState extends State<TransactionsPage> {
   String query = '';
   EntryType? type;
   @override
+  Widget build(BuildContext context) => Selector<AppState, List<MoneyEntry>>(
+    selector: (_, state) => state.entries,
+    builder: (context, entries, _) => _TransactionsContent(
+      entries: entries,
+      query: query,
+      type: type,
+      onQueryChanged: (value) => setState(() => query = value),
+      onTypeChanged: (value) => setState(() => type = value),
+    ),
+  );
+}
+
+class _TransactionsContent extends StatelessWidget {
+  const _TransactionsContent({
+    required this.entries,
+    required this.query,
+    required this.type,
+    required this.onQueryChanged,
+    required this.onTypeChanged,
+  });
+
+  final List<MoneyEntry> entries;
+  final String query;
+  final EntryType? type;
+  final ValueChanged<String> onQueryChanged;
+  final ValueChanged<EntryType?> onTypeChanged;
+
+  @override
   Widget build(BuildContext context) {
     final s = MoraStrings(Localizations.localeOf(context));
-    final filtered = widget.state.entries
+    final filtered = entries
         .where(
           (entry) =>
               (type == null || entry.type == type) &&
@@ -30,7 +60,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 10),
           child: TextField(
-            onChanged: (value) => setState(() => query = value),
+            onChanged: onQueryChanged,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
               hintText: s.get('search'),
@@ -46,19 +76,19 @@ class _TransactionsPageState extends State<TransactionsPage> {
               _Filter(
                 label: s.get('all'),
                 selected: type == null,
-                onTap: () => setState(() => type = null),
+                onTap: () => onTypeChanged(null),
               ),
               const SizedBox(width: 8),
               _Filter(
                 label: s.get('incomeType'),
                 selected: type == EntryType.income,
-                onTap: () => setState(() => type = EntryType.income),
+                onTap: () => onTypeChanged(EntryType.income),
               ),
               const SizedBox(width: 8),
               _Filter(
                 label: s.get('expenseType'),
                 selected: type == EntryType.expense,
-                onTap: () => setState(() => type = EntryType.expense),
+                onTap: () => onTypeChanged(EntryType.expense),
               ),
             ],
           ),
@@ -75,7 +105,10 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     child: Card(
                       child: EntryTile(
                         entry: filtered[index],
-                        state: widget.state,
+                        now: context.read<AppState>().now,
+                        onDelete: () => context.read<AppState>().removeEntry(
+                          filtered[index].id,
+                        ),
                       ),
                     ),
                   ),
@@ -103,18 +136,20 @@ class _Filter extends StatelessWidget {
   );
 }
 
-Future<void> showAddEntrySheet(BuildContext context, AppState state) =>
+/// Opens the form used to add a transaction to the shared app state.
+Future<void> showAddEntrySheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => AddEntrySheet(state: state),
+      builder: (context) => const AddEntrySheet(),
     );
 
+/// Form for creating a validated income or expense entry.
 class AddEntrySheet extends StatefulWidget {
-  const AddEntrySheet({super.key, required this.state});
-  final AppState state;
+  /// Creates the add transaction form.
+  const AddEntrySheet({super.key});
   @override
   State<AddEntrySheet> createState() => _AddEntrySheetState();
 }
@@ -134,7 +169,7 @@ class _AddEntrySheetState extends State<AddEntrySheet> {
 
   void save() {
     if (!formKey.currentState!.validate()) return;
-    widget.state.addEntry(
+    context.read<AppState>().addEntry(
       title: titleController.text,
       amount: int.parse(amountController.text.trim()),
       category: category,

@@ -30,7 +30,7 @@ test/        Unit, repository, state and widget tests
 integration_test/  End-to-end user flows
 ```
 
-The UI depends on a `BudgetRepository` through `AppState`, and financial calculations live in pure `BudgetMath` functions. The repository contract lets a durable local store replace the demo adapter.
+The UI depends on a `BudgetRepository` through `AppState`, and financial calculations live in pure `BudgetMath` functions. The repository contract lets a durable local store replace the demo adapter. `provider` exposes app state, while `Selector` scopes ledger, budget, insight, and settings updates to the data each screen reads. Ledger snapshots are cached and invalidated only after an entry changes.
 
 ## Requirements and setup
 
@@ -48,7 +48,9 @@ flutter analyze --fatal-infos
 flutter test
 ```
 
-Integration tests can run on Windows desktop or an Android emulator:
+The checked-in suite contains **28 unit tests**, **6 widget tests**, and **2 integration tests**. `flutter test` runs the first 34 tests; CI runs the two integration flows in its Windows job.
+
+Integration tests can run on Windows desktop (with the Visual Studio C++ desktop toolchain installed) or an Android emulator:
 
 ```sh
 flutter test integration_test
@@ -64,11 +66,11 @@ The APK is created at `build/app/outputs/flutter-apk/app-release.apk`. GitHub Ac
 
 ## Accessibility and performance
 
-Interactive controls use labels or semantic tooltips. Category icons are decorative because adjacent text names each category. Growing transaction history uses `ListView.builder`; screen updates use immutable widgets and local state. No remote image payloads are downloaded.
+Interactive controls use labels or semantic tooltips. Category icons are decorative because adjacent text names each category. Growing transaction history uses `ListView.builder`; `Selector` limits state-driven rebuilds and ledger snapshots are cached. The app uses Material icons and a drawn chart, so it downloads no image payloads.
 
 ## Screenshots
 
-Device-captured screenshots still need to be added under `docs/screenshots/` before release.
+Screenshots are not included yet. Add device captures under `docs/screenshots/` for a visual project overview.
 
 ## Changelog
 

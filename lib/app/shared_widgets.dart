@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 
 import '../domain/budget.dart';
-import 'app_state.dart';
 import 'strings.dart';
 
 const moraGreen = Color(0xff078B65);
 const moraMuted = Color(0xff78847D);
 
+/// Presents available balance, total income, and total expenses.
 class BalanceCard extends StatelessWidget {
+  /// Creates a card from the supplied amounts in ariary.
   const BalanceCard({
     super.key,
     required this.balance,
     required this.income,
     required this.expenses,
   });
-  final int balance, income, expenses;
+  /// Current available amount in ariary.
+  final int balance;
+
+  /// Total income in ariary.
+  final int income;
+
+  /// Total expenses in ariary.
+  final int expenses;
   @override
   Widget build(BuildContext context) {
     final s = MoraStrings(Localizations.localeOf(context));
@@ -132,10 +140,23 @@ class _BalanceMini extends StatelessWidget {
   );
 }
 
+/// Renders one ledger entry with its category, date, amount, and delete action.
 class EntryTile extends StatelessWidget {
-  const EntryTile({super.key, required this.entry, required this.state});
+  /// Creates an entry row using [onDelete] for its delete button.
+  const EntryTile({
+    super.key,
+    required this.entry,
+    required this.now,
+    required this.onDelete,
+  });
+  /// Entry shown by this row.
   final MoneyEntry entry;
-  final AppState state;
+
+  /// Reference date used to display today and yesterday labels.
+  final DateTime now;
+
+  /// Called when the user chooses to remove the entry.
+  final VoidCallback onDelete;
   @override
   Widget build(BuildContext context) {
     final s = MoraStrings(Localizations.localeOf(context));
@@ -150,7 +171,7 @@ class EntryTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
-        '${s.category(entry.category.name)} · ${_dateText(entry.date, s, state.now)}',
+        '${s.category(entry.category.name)} · ${_dateText(entry.date, s, now)}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -171,7 +192,7 @@ class EntryTile extends StatelessWidget {
             tooltip: '${s.get('delete')} ${entry.title}',
             icon: const Icon(Icons.close_rounded, size: 17),
             visualDensity: VisualDensity.compact,
-            onPressed: () => state.removeEntry(entry.id),
+            onPressed: onDelete,
           ),
         ],
       ),
@@ -194,7 +215,9 @@ String _dateText(DateTime date, MoraStrings s, DateTime now) {
   return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
 }
 
+/// Decorative icon and color associated with a budget category.
 class CategoryIcon extends StatelessWidget {
+  /// Creates a category icon at [size].
   const CategoryIcon({super.key, required this.category, this.size = 46});
   final BudgetCategory category;
   final double size;
@@ -241,7 +264,9 @@ class CategoryIcon extends StatelessWidget {
   }
 }
 
+/// Section heading with an optional trailing label and tap action.
 class SectionTitle extends StatelessWidget {
+  /// Creates a section heading.
   const SectionTitle({
     super.key,
     required this.title,
@@ -281,7 +306,9 @@ class SectionTitle extends StatelessWidget {
   );
 }
 
+/// Card used to explain why a list or chart currently has no data.
 class EmptyCard extends StatelessWidget {
+  /// Creates an empty state with the supplied [label].
   const EmptyCard({super.key, required this.label});
   final String label;
   @override
@@ -293,7 +320,9 @@ class EmptyCard extends StatelessWidget {
   );
 }
 
+/// Bar chart of daily expenses with a screen-reader summary.
 class WeeklyChart extends StatelessWidget {
+  /// Creates a weekly chart from seven daily values.
   const WeeklyChart({
     super.key,
     required this.values,

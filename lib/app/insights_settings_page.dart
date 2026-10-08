@@ -1,23 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../domain/budget.dart';
 import 'app_state.dart';
 import 'shared_widgets.dart';
 import 'strings.dart';
 
+/// Summarizes monthly expenses and spending by category.
 class InsightsPage extends StatelessWidget {
-  const InsightsPage({super.key, required this.state});
-  final AppState state;
+  /// Creates the insights screen.
+  const InsightsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Selector<AppState, List<MoneyEntry>>(
+    selector: (_, state) => state.monthEntries,
+    builder: (context, entries, _) => _InsightsContent(entries: entries),
+  );
+}
+
+class _InsightsContent extends StatelessWidget {
+  const _InsightsContent({required this.entries});
+
+  final List<MoneyEntry> entries;
+
   @override
   Widget build(BuildContext context) {
     final s = MoraStrings(Localizations.localeOf(context));
-    final expenses = BudgetMath.total(state.monthEntries, EntryType.expense);
+    final expenses = BudgetMath.total(entries, EntryType.expense);
     final categories =
         BudgetCategory.values
-            .map(
-              (c) =>
-                  MapEntry(c, BudgetMath.categoryTotal(state.monthEntries, c)),
-            )
+            .map((c) => MapEntry(c, BudgetMath.categoryTotal(entries, c)))
             .where((e) => e.value > 0)
             .toList()
           ..sort((a, b) => b.value.compareTo(a.value));
@@ -57,7 +69,10 @@ class InsightsPage extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: WeeklyChart(
-              values: BudgetMath.weeklyExpenses(state.entries, DateTime.now()),
+              values: BudgetMath.weeklyExpenses(
+                entries,
+                context.read<AppState>().now,
+              ),
               strings: s,
               height: 190,
             ),
@@ -124,110 +139,4 @@ class InsightsPage extends StatelessWidget {
       ],
     );
   }
-}
-
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key, required this.state});
-  final AppState state;
-  @override
-  Widget build(BuildContext context) {
-    final s = MoraStrings(Localizations.localeOf(context));
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-      children: [
-        Text(
-          s.get('settings'),
-          style: Theme.of(context).textTheme.titleLarge
-              ?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 14),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: _SettingIcon(icon: Icons.language_rounded),
-                title: Text(s.get('language')),
-                subtitle: Text(
-                  state.locale.languageCode == 'fr'
-                      ? s.get('french')
-                      : s.get('english'),
-                ),
-                trailing: DropdownButton<Locale>(
-                  value: state.locale,
-                  underline: const SizedBox.shrink(),
-                  onChanged: (value) {
-                    if (value != null) state.setLanguage(value);
-                  },
-                  items: [
-                    DropdownMenuItem(
-                      value: const Locale('fr'),
-                      child: Text(s.get('french')),
-                    ),
-                    DropdownMenuItem(
-                      value: const Locale('en'),
-                      child: Text(s.get('english')),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, indent: 68),
-              SwitchListTile(
-                secondary: _SettingIcon(icon: Icons.dark_mode_outlined),
-                title: Text(s.get('darkMode')),
-                subtitle: Text(s.get('darkModeHint')),
-                value: state.themeMode == ThemeMode.dark,
-                onChanged: state.setDarkMode,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: _SettingIcon(icon: Icons.currency_exchange_rounded),
-                title: Text(s.get('currency')),
-                subtitle: const Text('MGA · Ar'),
-              ),
-              const Divider(height: 1, indent: 68),
-              ListTile(
-                leading: _SettingIcon(icon: Icons.shield_outlined),
-                title: Text(s.get('privacy')),
-                subtitle: Text(s.get('offline')),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        Center(
-          child: Text(
-            'Mora · 1.0.0',
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: moraMuted),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Center(
-          child: Text(
-            '${s.get('sampleData')}: ${s.get('sampleHint')}',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: moraMuted),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SettingIcon extends StatelessWidget {
-  const _SettingIcon({required this.icon});
-  final IconData icon;
-  @override
-  Widget build(BuildContext context) => CircleAvatar(
-    radius: 20,
-    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-    child: Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-  );
 }

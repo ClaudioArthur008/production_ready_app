@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Builds Mora's light and dark Material 3 themes.
 class MoraTheme {
   static const _green = Color(0xff078B65);
   static const _darkGreen = Color(0xff03684C);
@@ -7,7 +8,10 @@ class MoraTheme {
   static const _muted = Color(0xff718079);
   static const _canvas = Color(0xffF5F7F5);
 
+  /// Returns the light appearance.
   static ThemeData light() => _build(Brightness.light);
+
+  /// Returns the dark appearance.
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {

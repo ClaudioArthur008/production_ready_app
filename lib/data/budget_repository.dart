@@ -1,12 +1,20 @@
 import '../domain/budget.dart';
 
+/// Storage contract used by the application state to access budget entries.
 abstract interface class BudgetRepository {
+  /// Loads an immutable snapshot of every saved entry.
   List<MoneyEntry> loadEntries();
+
+  /// Adds [entry], rejecting duplicate identifiers.
   void addEntry(MoneyEntry entry);
+
+  /// Removes the entry with [id] and reports whether one was found.
   bool removeEntry(String id);
 }
 
+/// In-memory [BudgetRepository] used by the Mora demo.
 class InMemoryBudgetRepository implements BudgetRepository {
+  /// Creates a repository initialized with [initialEntries].
   InMemoryBudgetRepository([Iterable<MoneyEntry> initialEntries = const []])
     : _entries = List<MoneyEntry>.of(initialEntries);
   final List<MoneyEntry> _entries;
@@ -28,6 +36,7 @@ class InMemoryBudgetRepository implements BudgetRepository {
   }
 }
 
+/// Builds the sample ledger relative to [now] for the first app launch.
 List<MoneyEntry> demoEntries(DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
   return [

@@ -1,10 +1,17 @@
 import 'package:flutter/widgets.dart';
 
+/// Provides localized labels and ariary formatting for Mora's supported locales.
 class MoraStrings {
+  /// Creates a string catalog for [locale].
   MoraStrings(this.locale);
+
+  /// Locale used to choose French or English copy.
   final Locale locale;
+
+  /// Whether the selected language is French.
   bool get isFrench => locale.languageCode == 'fr';
 
+  /// Returns the localized value for [key], or the key when it is unknown.
   String get(String key) => (isFrench ? _fr : _en)[key] ?? key;
   static const _fr = <String, String>{
     'app': 'Mora',
@@ -150,7 +157,10 @@ class MoraStrings {
     'sunday': 'Sun',
     'noBudgetData': 'Add expenses to see your progress.',
   };
+  /// Returns the localized label for a budget category name.
   String category(String name) => get(name);
+
+  /// Formats an ariary amount using the locale's thousands separator.
   String amount(int value) {
     final digits = value.abs().toString();
     final separator = isFrench ? ' ' : ',';
@@ -162,6 +172,7 @@ class MoraStrings {
     return '${value < 0 ? '−' : ''}${buffer.toString()} Ar';
   }
 
+  /// Returns the short localized name of a weekday numbered Monday to Sunday.
   String dayLabel(int weekday) => get(
     const [
       'monday',

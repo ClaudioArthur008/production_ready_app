@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../data/budget_repository.dart';
 import '../domain/budget.dart';
 
+/// Coordinates budget data, locale, appearance, and UI notifications.
 class AppState extends ChangeNotifier {
+  /// Creates app state backed by [repository] or the local demo ledger.
   AppState({BudgetRepository? repository, DateTime? now})
     : _now = now ?? DateTime.now(),
       _repository =
@@ -15,32 +17,48 @@ class AppState extends ChangeNotifier {
   Locale _locale = const Locale('fr');
   ThemeMode _themeMode = ThemeMode.light;
   int _nextId = 0;
+  List<MoneyEntry>? _entriesCache;
+  List<MoneyEntry>? _monthEntriesCache;
 
+  /// Fixed clock used to keep date-based demo calculations deterministic.
   DateTime get now => _now;
+
+  /// Currently selected app language.
   Locale get locale => _locale;
+
+  /// Currently selected light or dark appearance.
   ThemeMode get themeMode => _themeMode;
-  List<MoneyEntry> get entries {
-    final result = _repository.loadEntries().toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
-    return List.unmodifiable(result);
-  }
 
+  /// Immutable ledger snapshot ordered from newest to oldest.
+  List<MoneyEntry> get entries => _entriesCache ??= List.unmodifiable(
+    _repository.loadEntries().toList()
+      ..sort((a, b) => b.date.compareTo(a.date)),
+  );
+
+  /// Total income across the ledger.
   int get income => BudgetMath.total(entries, EntryType.income);
-  int get expenses => BudgetMath.total(entries, EntryType.expense);
-  int get balance => income - expenses;
-  List<MoneyEntry> get monthEntries => entries
-      .where(
-        (entry) =>
-            entry.date.year == _now.year && entry.date.month == _now.month,
-      )
-      .toList(growable: false);
 
+  /// Total expenses across the ledger.
+  int get expenses => BudgetMath.total(entries, EntryType.expense);
+
+  /// Available balance, calculated as income less expenses.
+  int get balance => income - expenses;
+
+  /// Immutable entries dated within the current month.
+  List<MoneyEntry> get monthEntries => _monthEntriesCache ??= List.unmodifiable(
+    entries.where(
+      (entry) => entry.date.year == _now.year && entry.date.month == _now.month,
+    ),
+  );
+
+  /// Updates the interface language and notifies listeners when it changes.
   void setLanguage(Locale locale) {
     if (_locale == locale) return;
     _locale = locale;
     notifyListeners();
   }
 
+  /// Selects dark mode when [value] is true, otherwise light mode.
   void setDarkMode(bool value) {
     final next = value ? ThemeMode.dark : ThemeMode.light;
     if (_themeMode == next) return;
@@ -48,6 +66,9 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Validates and saves a transaction, then notifies listeners.
+  ///
+  /// Throws [ArgumentError] if the title is blank or [amount] is not positive.
   MoneyEntry addEntry({
     required String title,
     required int amount,
@@ -72,13 +93,23 @@ class AppState extends ChangeNotifier {
       note: note.trim(),
     );
     _repository.addEntry(entry);
+    _invalidateEntries();
     notifyListeners();
     return entry;
   }
 
+  /// Removes the transaction identified by [id].
   bool removeEntry(String id) {
     final removed = _repository.removeEntry(id);
-    if (removed) notifyListeners();
+    if (removed) {
+      _invalidateEntries();
+      notifyListeners();
+    }
     return removed;
+  }
+
+  void _invalidateEntries() {
+    _entriesCache = null;
+    _monthEntriesCache = null;
   }
 }

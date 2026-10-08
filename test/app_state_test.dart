@@ -22,6 +22,23 @@ void main() {
       expect(entry.title, 'Market');
       expect(state.entries.single.amount, 12000);
     });
+    test('keeps ledger snapshots stable until an entry changes', () {
+      final entries = state.entries;
+      final monthEntries = state.monthEntries;
+
+      state.setDarkMode(true);
+
+      expect(identical(state.entries, entries), isTrue);
+      expect(identical(state.monthEntries, monthEntries), isTrue);
+      state.addEntry(
+        title: 'Market',
+        amount: 12000,
+        category: BudgetCategory.food,
+        type: EntryType.expense,
+      );
+      expect(identical(state.entries, entries), isFalse);
+      expect(identical(state.monthEntries, monthEntries), isFalse);
+    });
     test(
       'rejects a blank title',
       () => expect(

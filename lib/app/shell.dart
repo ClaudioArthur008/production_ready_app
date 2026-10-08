@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../domain/budget.dart';
 import 'app_state.dart';
 import 'budget_page.dart';
 import 'insights_settings_page.dart';
 import 'shared_widgets.dart';
+import 'settings_page.dart';
 import 'strings.dart';
 import 'transaction_page.dart';
 
+/// Hosts Mora's five top-level destinations and shared transaction action.
 class MoraShell extends StatefulWidget {
-  const MoraShell({super.key, required this.state});
-  final AppState state;
+  /// Creates the main navigation shell.
+  const MoraShell({super.key});
   @override
   State<MoraShell> createState() => _MoraShellState();
 }
@@ -28,14 +31,11 @@ class _MoraShellState extends State<MoraShell> {
       s.get('settings'),
     ];
     final pages = [
-      OverviewPage(
-        state: widget.state,
-        onSeeAll: () => setState(() => tab = 1),
-      ),
-      TransactionsPage(state: widget.state),
-      BudgetsPage(state: widget.state),
-      InsightsPage(state: widget.state),
-      SettingsPage(state: widget.state),
+      OverviewPage(onSeeAll: () => setState(() => tab = 1)),
+      const TransactionsPage(),
+      const BudgetsPage(),
+      const InsightsPage(),
+      const SettingsPage(),
     ];
     return Scaffold(
       appBar: AppBar(
@@ -58,7 +58,7 @@ class _MoraShellState extends State<MoraShell> {
       ),
       body: IndexedStack(index: tab, children: pages),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showAddEntrySheet(context, widget.state),
+        onPressed: () => showAddEntrySheet(context),
         tooltip: s.get('addTransaction'),
         icon: const Icon(Icons.add_rounded),
         label: Text(s.get('add')),
@@ -98,15 +98,40 @@ class _MoraShellState extends State<MoraShell> {
   }
 }
 
+/// Displays the current balance, recent entries, and weekly spending chart.
 class OverviewPage extends StatelessWidget {
-  const OverviewPage({super.key, required this.state, required this.onSeeAll});
-  final AppState state;
+  /// Creates the overview and calls [onSeeAll] when recent activity is opened.
+  const OverviewPage({super.key, required this.onSeeAll});
+
+  /// Callback that opens the transaction history screen.
   final VoidCallback onSeeAll;
+  @override
+  Widget build(BuildContext context) => Selector<AppState, List<MoneyEntry>>(
+    selector: (_, state) => state.entries,
+    builder: (context, entries, _) => _OverviewContent(
+      entries: entries,
+      now: context.read<AppState>().now,
+      onSeeAll: onSeeAll,
+    ),
+  );
+}
+
+class _OverviewContent extends StatelessWidget {
+  const _OverviewContent({
+    required this.entries,
+    required this.now,
+    required this.onSeeAll,
+  });
+
+  final List<MoneyEntry> entries;
+  final DateTime now;
+  final VoidCallback onSeeAll;
+
   @override
   Widget build(BuildContext context) {
     final s = MoraStrings(Localizations.localeOf(context));
-    final weekly = BudgetMath.weeklyExpenses(state.entries, DateTime.now());
-    final recent = state.entries.take(4).toList();
+    final weekly = BudgetMath.weeklyExpenses(entries, now);
+    final recent = entries.take(4).toList();
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       children: [
@@ -123,9 +148,9 @@ class OverviewPage extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         BalanceCard(
-          balance: state.balance,
-          income: state.income,
-          expenses: state.expenses,
+          balance: BudgetMath.balance(entries),
+          income: BudgetMath.total(entries, EntryType.income),
+          expenses: BudgetMath.total(entries, EntryType.expense),
         ),
         const SizedBox(height: 22),
         SectionTitle(title: s.get('weeklySpending'), trailing: s.get('week')),
@@ -150,7 +175,12 @@ class OverviewPage extends StatelessWidget {
             child: Column(
               children: [
                 for (var i = 0; i < recent.length; i++) ...[
-                  EntryTile(entry: recent[i], state: state),
+                  EntryTile(
+                    entry: recent[i],
+                    now: now,
+                    onDelete: () =>
+                        context.read<AppState>().removeEntry(recent[i].id),
+                  ),
                   if (i < recent.length - 1)
                     const Divider(height: 1, indent: 70),
                 ],

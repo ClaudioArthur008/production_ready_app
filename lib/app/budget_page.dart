@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../domain/budget.dart';
 import 'app_state.dart';
 import 'shared_widgets.dart';
 import 'strings.dart';
 
+/// Shows monthly spending progress for each configured category limit.
 class BudgetsPage extends StatelessWidget {
-  const BudgetsPage({super.key, required this.state});
-  final AppState state;
+  /// Creates the monthly budget screen.
+  const BudgetsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Selector<AppState, List<MoneyEntry>>(
+    selector: (_, state) => state.monthEntries,
+    builder: (context, entries, _) => _BudgetsContent(entries: entries),
+  );
+}
+
+class _BudgetsContent extends StatelessWidget {
+  const _BudgetsContent({required this.entries});
+
+  final List<MoneyEntry> entries;
+
   @override
   Widget build(BuildContext context) {
     final s = MoraStrings(Localizations.localeOf(context));
-    final month = state.monthEntries;
+    final month = entries;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       children: [
